@@ -7,10 +7,13 @@ import org.dom4j.Node;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.lang.Double.MIN_VALUE;
 
@@ -19,44 +22,28 @@ public class ID3 {
     private List<List<String>> attributeValuesList;
     private List<String[]> data;
 
-    int decatt;
+    private int decatt;
     public static final String attributeRegexString = "@attribute(.*)[{](.*?)[}]";
 
-    Document xmldoc;
-    Element root;
+    private Document xmldoc;
+    private Element root;
 
-    public ID3(List<String> attributes, List<List<String>> attributeValuesList, List<String[]> data) {
+    public ID3(List<String> attributes, List<List<String>> attributeValuesList, List<String[]> data, int decatt) {
         this.attributes = attributes;
         this.attributeValuesList = attributeValuesList;
         this.data = data;
+        this.decatt = decatt;
 
         xmldoc = DocumentHelper.createDocument();
         root = xmldoc.addElement("root");
         root.addElement("DecisionTree").addAttribute("value", "null");
     }
 
-    public void setDec(int n) {
-        if (n < 0 || n > attributes.size()) {
-            System.out.println("决策变量指定错误。");
-            System.exit(2);
-        }
-
-        decatt = n;
-    }
-
-    public void setDec(String name) {
-        int n = attributes.indexOf(name);
-        setDec(n);
-    }
-
-    public double getEntropy(int[] labelCounts) {
+    private double getEntropy(int[] labelCounts) {
 
         int sum = Arrays.stream(labelCounts).sum();
         double entropy = Arrays.stream(labelCounts)
-                .mapToDouble((int value) -> {
-                    double v = value;
-                    return v;
-                })
+                .mapToDouble((int value) -> (double) value)
                 .reduce(0.0, (ent, labelCount) -> ent - labelCount * Math.log(labelCount + MIN_VALUE) / Math.log(2));
 
         entropy += sum * Math.log(sum + MIN_VALUE) / Math.log(2);
@@ -64,9 +51,9 @@ public class ID3 {
         return entropy;
     }
 
-    public boolean isInfoPure(List<Integer> dataIndexes) {
+    private boolean isInfoPure(List<Integer> dataIndexes) {
         return dataIndexes.stream()
-                .map(index -> getLabelValue(index))
+                .map(this::getLabelValue)
                 .collect(Collectors.toSet())
                 .size() == 1;
 //        String labelValue = getLabelValue(dataIndexes.get(0));
@@ -84,7 +71,7 @@ public class ID3 {
         return data.get(dataIndex)[decatt];
     }
 
-    public double calNodeEntropy(List<Integer> dataIndexes, int attributeIndex) {
+    private double calNodeEntropy(List<Integer> dataIndexes, int attributeIndex) {
         int dataSize = dataIndexes.size();
         double entropy = 0.0;
 
@@ -92,8 +79,8 @@ public class ID3 {
 
         int[] count = new int[getAttributeValuesSize(attributeIndex)];
 
-        for (int i = 0; i < dataSize; i++) {
-            int dataIndex = dataIndexes.get(i);
+        for (Integer dataIndexe : dataIndexes) {
+            int dataIndex = dataIndexe;
             String nodeValue = data.get(dataIndex)[attributeIndex];
             int nodeind = attributeValuesList.get(attributeIndex).indexOf(nodeValue);
             count[nodeind]++;
@@ -128,13 +115,11 @@ public class ID3 {
         return attributeValuesList.get(attributeIndex).size();
     }
 
-    public void buildDT(String name, String value, List<Integer> dataIndexes, List<Integer> attributeIndexes) {
+    private void buildDT(String name, String value, List<Integer> dataIndexes, List<Integer> attributeIndexes) {
         Element ele = null;
 
         List<Node> list = root.selectNodes("//" + name);
-        Iterator<Node> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            Node element = iterator.next();
+        for (Node element : list) {
             if (element instanceof Element) {
                 ele = (Element) element;
                 if (ele.attributeValue("value").equals(value)) {
@@ -183,7 +168,7 @@ public class ID3 {
     }
 
 
-    public void writeXML(String filename) {
+    private void writeXML(String filename) {
         try {
             File file = new File(filename);
             if (!file.exists())
@@ -196,5 +181,28 @@ public class ID3 {
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    public void generateDecisionTree() {
+        List<Integer> attributeIndexes = getIntegerStream(attributes.size())
+                .filter(this::isNotDecatt)
+                .collect(Collectors.toList());
+
+        List<Integer> dataIndexes = getIntegerStream(data.size())
+                .collect(Collectors.toList());
+
+        buildDT("DecisionTree", "null", dataIndexes, attributeIndexes);
+        writeXML("/Users/hayhe/Workspace/java/al/src/main/resources/dt.xml");
+    }
+
+    private Stream<Integer> getIntegerStream(int size) {
+        return IntStream
+                .range(0, size)
+                .boxed();
+    }
+
+
+    private boolean isNotDecatt(Integer i) {
+        return i != decatt;
     }
 }

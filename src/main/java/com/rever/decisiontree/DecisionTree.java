@@ -15,7 +15,7 @@ public class DecisionTree {
     private List<List<String>> attributeValuesList = new ArrayList<>();
     private List<String[]> data = new ArrayList<>();
 
-    int decatt;
+    private int decatt;
     public static final String attributeRegexString = "@attribute(.*)[{](.*?)[}]";
 
 
@@ -25,26 +25,29 @@ public class DecisionTree {
         DecisionTree decisionTree = new DecisionTree();
 
         decisionTree.readARFF(new File("/Users/hayhe/Workspace/java/al/src/main/resources/weather.nominal.arff"));
+        decisionTree.setDec("play");
 
-        ID3 id3 = new ID3(decisionTree.attributes, decisionTree.attributeValuesList, decisionTree.data);
-        id3.setDec("play");
-        List<Integer> attributesWithoutLabel = new LinkedList<>();
-        for (int i = 0; i < decisionTree.attributes.size(); i++) {
-            if (i != id3.decatt)
-                attributesWithoutLabel.add(i);
-        }
-        ArrayList<Integer> al = new ArrayList<>();
-        for (int i = 0; i < decisionTree.data.size(); i++) {
-            al.add(i);
-        }
+        ID3 id3 = new ID3(decisionTree.attributes, decisionTree.attributeValuesList, decisionTree.data, decisionTree.decatt);
 
-//        IntStream.range(0, decisionTree.data.size()).
-        id3.buildDT("DecisionTree", "null", al, attributesWithoutLabel);
-        id3.writeXML("/Users/hayhe/Workspace/java/al/src/main/resources/dt.xml");
-        return;
+        id3.generateDecisionTree();
     }
 
-    public void readARFF(File file) {
+    private void setDec(int n) {
+        if (n < 0 || n > attributes.size()) {
+            System.out.println("决策变量指定错误。");
+            System.exit(2);
+        }
+
+        decatt = n;
+    }
+
+    private void setDec(String name) {
+        int n = attributes.indexOf(name);
+        setDec(n);
+    }
+
+
+    private void readARFF(File file) {
         try {
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
@@ -60,8 +63,6 @@ public class DecisionTree {
 
                 } else if (line.startsWith("@data")) {
                     readData(br);
-                } else {
-                    continue;
                 }
             }
 
@@ -74,7 +75,7 @@ public class DecisionTree {
     private void readData(BufferedReader br) throws IOException {
         String line;
         while ((line = br.readLine()) != null) {
-            if (line == "") {
+            if ("".equals(line)) {
                 continue;
             }
 
