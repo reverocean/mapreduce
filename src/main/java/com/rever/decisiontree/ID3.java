@@ -10,15 +10,14 @@ import org.dom4j.io.XMLWriter;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.Double.MIN_VALUE;
 
 public class ID3 {
-    private List<String> attributes = new ArrayList<>();
-    private List<List<String>> attributeValuesList = new ArrayList<>();
-    private List<String[]> data = new ArrayList<>();
+    private List<String> attributes;
+    private List<List<String>> attributeValuesList;
+    private List<String[]> data;
 
     int decatt;
     public static final String attributeRegexString = "@attribute(.*)[{](.*?)[}]";
@@ -26,72 +25,14 @@ public class ID3 {
     Document xmldoc;
     Element root;
 
-    public ID3() {
+    public ID3(List<String> attributes, List<List<String>> attributeValuesList, List<String[]> data) {
+        this.attributes = attributes;
+        this.attributeValuesList = attributeValuesList;
+        this.data = data;
+
         xmldoc = DocumentHelper.createDocument();
         root = xmldoc.addElement("root");
         root.addElement("DecisionTree").addAttribute("value", "null");
-    }
-
-    public static void main(String[] args) {
-        ID3 id3 = new ID3();
-        id3.readARFF(new File("/Users/hayhe/Workspace/java/al/src/main/resources/weather.nominal.arff"));
-
-        id3.setDec("play");
-        List<Integer> attributesWithoutLabel = new LinkedList<Integer>();
-        for (int i = 0; i < id3.attributes.size(); i++) {
-            if (i != id3.decatt)
-                attributesWithoutLabel.add(i);
-        }
-        ArrayList<Integer> al = new ArrayList<Integer>();
-        for (int i = 0; i < id3.data.size(); i++) {
-            al.add(i);
-        }
-        id3.buildDT("DecisionTree", "null", al, attributesWithoutLabel);
-        id3.writeXML("/Users/hayhe/Workspace/java/al/src/main/resources/dt.xml");
-        return;
-    }
-
-    public void readARFF(File file) {
-        try {
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            String line;
-            Pattern attributePattern = Pattern.compile(attributeRegexString);
-            while ((line = br.readLine()) != null) {
-                Matcher matcher = attributePattern.matcher(line);
-
-                if (isAttribute(matcher)) {
-                    attributes.add(matcher.group(1).trim());
-                    String[] values = matcher.group(2).split(",");
-                    attributeValuesList.add(Arrays.stream(values).map(String::trim).collect(Collectors.toList()));
-
-                } else if (line.startsWith("@data")) {
-                    readData(br);
-                } else {
-                    continue;
-                }
-            }
-
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void readData(BufferedReader br) throws IOException {
-        String line;
-        while ((line = br.readLine()) != null) {
-            if (line == "") {
-                continue;
-            }
-
-            String[] row = line.split(",");
-            data.add(row);
-        }
-    }
-
-    private boolean isAttribute(Matcher matcher) {
-        return matcher.find();
     }
 
     public void setDec(int n) {
