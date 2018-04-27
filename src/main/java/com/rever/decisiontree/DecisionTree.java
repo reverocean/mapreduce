@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class DecisionTree {
     private List<String> attributes = new ArrayList<>();
@@ -16,7 +15,7 @@ public class DecisionTree {
     private List<String[]> data = new ArrayList<>();
 
     private int decatt;
-    public static final String attributeRegexString = "@attribute(.*)[{](.*?)[}]";
+    private static final String attributeRegexString = "@attribute(.*)[{](.*?)[}]";
 
 
     public static void main(String[] args) {
@@ -27,7 +26,7 @@ public class DecisionTree {
         decisionTree.readARFF(new File("/Users/hayhe/Workspace/java/al/src/main/resources/weather.nominal.arff"));
         decisionTree.setDec("play");
 
-        ID3 id3 = new ID3(decisionTree.attributes, decisionTree.attributeValuesList, decisionTree.data, decisionTree.decatt);
+        AbstractDecisionTree id3 = new ID3(decisionTree.attributes, decisionTree.attributeValuesList, decisionTree.data, decisionTree.decatt);
 
         id3.generateDecisionTree();
     }
@@ -52,7 +51,7 @@ public class DecisionTree {
             FileReader fr = new FileReader(file);
             BufferedReader br = new BufferedReader(fr);
             String line;
-            Pattern attributePattern = Pattern.compile(ID3.attributeRegexString);
+            Pattern attributePattern = Pattern.compile(attributeRegexString);
             while ((line = br.readLine()) != null) {
                 Matcher matcher = attributePattern.matcher(line);
 
