@@ -22,13 +22,20 @@ public class DecisionTree {
 
 
         DecisionTree decisionTree = new DecisionTree();
-
-        decisionTree.readARFF(new File("/Users/hayhe/Workspace/java/al/src/main/resources/weather.nominal.arff"));
-        decisionTree.setDec("play");
+//
+//        decisionTree.readARFF(new File("/Users/hayhe/Workspace/java/al/src/main/resources/weather.nominal.arff"));
+//        decisionTree.setDec("play");
+//
+        decisionTree.readARFF(new File("/Users/hayhe/Workspace/java/al/src/main/resources/xigua.nominal.arff"));
+        decisionTree.setDec("好瓜");
 
         AbstractDecisionTree id3 = new ID3(decisionTree.attributes, decisionTree.attributeValuesList, decisionTree.data, decisionTree.decatt);
 
-        id3.generateDecisionTree();
+//        id3.generateDecisionTree();
+
+        C45DecisionTreeImpl c45 = new C45DecisionTreeImpl(decisionTree.attributes, decisionTree.attributeValuesList, decisionTree.data, decisionTree.decatt);
+
+        c45.generateDecisionTree();
     }
 
     private void setDec(int n) {
